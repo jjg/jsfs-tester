@@ -6,6 +6,7 @@ import (
   "os"
   "net/http"
   "time"
+  "bytes"
 )
 
 type TestResult struct {
@@ -32,6 +33,34 @@ func connectTest(proto string, name string, port int) (bool, int64, error){
   return true, time.Since(startTime).Milliseconds(), nil
 }
 
+func postTest(proto string, name string, port int, fileName string) (bool, int64, error){
+  startTime := time.Now()
+
+  // TODO: Don't hard-code the access key
+  reqUrl := fmt.Sprintf("%s://%s:%d/%s.txt?access_key=foo", proto, name, port, fileName)
+  jsonBody := []byte(`{"message": "I am a teapot"}`)
+  bodyReader := bytes.NewReader(jsonBody)
+  
+  req, err := http.NewRequest(http.MethodPost, reqUrl, bodyReader)
+  if err != nil {
+    return false, time.Since(startTime).Milliseconds(), err
+  }
+  res, err := http.DefaultClient.Do(req)
+  if err != nil {
+    return false, time.Since(startTime).Milliseconds(), err
+  }
+
+  log.Printf("POST got a response code %d", res.StatusCode)
+
+  // TODO: Might need to check for variations of 2xx
+  if res.StatusCode == 200 {
+    return true, time.Since(startTime).Milliseconds(), nil
+  } else {
+    return false, time.Since(startTime).Milliseconds(), nil
+  }
+}
+
+
 func main() {
   log.Print("Starting up...")
   
@@ -55,11 +84,20 @@ func main() {
     results["connectivity"] = &TestResult{Pass: pass, Duration: duration}  
   }
   
-  
   // TODO: Execute tests as requested (number, concurrency, etc.)
+  // TODO: Include auth (token, key, etc.) in these tests
+  fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
   
   // TODO: Test each JSFS method and record the results
   // TODO: POST a file
+  log.Print("Testing POST")
+  if pass, duration, err := postTest(serverProto, serverName, serverPort, fileName); err != nil {
+    log.Fatal("Error running POST test: %s", err)
+    os.Exit(1)
+  } else {
+    results["post"] = &TestResult{Pass: pass, Duration: duration}  
+  }
+    
   
   // TODO: HEAD the file
   // TODO: GET the file
