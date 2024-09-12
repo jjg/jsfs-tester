@@ -74,7 +74,7 @@ func main() {
   serverProto := "http"
   serverPort := 7302
   runs := 5
-  concurrency := 1
+  concurrency := 2
 
   // Create a structure to record the results and timing of each test
   runResults := make(map[int]map[string]*TestResult, runs)
@@ -93,34 +93,43 @@ func main() {
   // TODO: Include auth (token, key, etc.) in these tests
   fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
   
-  // TODO: Test each JSFS method and record the results
+  // Test each JSFS method and record the results
   // TODO: POST a file
-  log.Printf("Testing %d runs with concurrency %d", runs, concurrency)
+  log.Printf("Testing %d runs with concurrency of %d", runs, concurrency)
 
-  // TODO: Can't do concurrency until we decide how we want to report on it,
-  // (show all results, show average, etc.)
-  //c := make(chan int)
+  // Create a channel to recieve run results
+  c := make(chan map[string]*TestResult)
+
+  // Start each run
   for run := 0; run < runs; run++ {
-    //go func() {
-      runResults[run] = make(map[string]*TestResult, testCount)
+    go func() {
+      runResult := make(map[string]*TestResult, testCount)
       
       log.Print("Testing POST")
       pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
       if err != nil {
         log.Printf("Error running POST test: %s", err)
       }
-      runResults[run]["post"] = &TestResult{Pass: pass, Duration: duration}
+      runResult["post"] = &TestResult{Pass: pass, Duration: duration}
  
-      
       // TODO: HEAD the file
       // TODO: GET the file
       // TODO: PUT a chane to the file
       // TODO: DELETE the file
 
       // TODO: Consider how tests might be written external to this code
-    //}()
+
+      c <- runResult
+    }()
   }
 
+  // Gather run results from the channel
+  // TODO: There may be a smarter way to do this
+  for i:=runs;i>0;i-- {
+    runResults[i] = <-c
+  }
+  
+  // TODO: Start another batch of runs (up to concurrency limit)
 
   // Display results
   for i:=0;i<runs;i++ {
