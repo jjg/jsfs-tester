@@ -125,7 +125,7 @@ func main() {
   // Display results
   for i:=0;i<runs;i++ {
     fmt.Printf("Run %d:\n", i)
-    fmt.Printf("Test\t\t\tPass\tDuration\n")
+    fmt.Printf("Test\t\tPass\tDuration\n")
     for k, v := range runResults[i] {
       fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
     }
