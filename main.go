@@ -63,22 +63,48 @@ func postTest(proto string, name string, port int, fileName string) (bool, int64
   }
 }
 
+// TODO: This should probably accept a struct or something easier
+// for the caller to not mess-up
+func doRun(run int, q chan int, r chan map[string]*TestResult, serverProto string, serverName string, serverPort int, fileName string){
+  runResult := make(map[string]*TestResult, testCount)
+
+  // Add the run to the queue (this will block if the channel is full)
+  q <- run
+
+  // Test each JSFS method and record the results    
+  log.Print("Testing POST")
+  pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
+  if err != nil {
+    log.Printf("Error running POST test: %s", err)
+  }
+  runResult["post"] = &TestResult{Pass: pass, Duration: duration}
+
+  // TODO: HEAD the file
+  // TODO: GET the file
+  // TODO: PUT a chane to the file
+  // TODO: DELETE the file
+
+  // TODO: Include auth (token, key, etc.) in these tests
+  // TODO: Consider how tests might be written external to this code
+
+  // Send the results of the run through the results channel
+  r <- runResult
+
+  // Remove this run from the queue
+  log.Printf("Removing run %d from the queue", <-q)  
+}
 
 func main() {
 
   log.Print("Starting up...")
   
-  // TODO: parse arguments for server name, port, concurrency, 
-  // number of test runs, verbosity, etc.
+  // TODO: parse cli arguments for server name, port, 
+  // concurrency, number of test runs, verbosity, etc.
   serverName := "localhost"
   serverProto := "http"
   serverPort := 7302
   runs := 5
   concurrency := 2
-
-  // Create a structure to record the results and timing of each test
-  runResults := make(map[int]map[string]*TestResult, runs)
-  //finalResults := make(map[string]*TestResult, testCount)
 
   // Perform a check to make sure the arguments point to a valid server
   log.Print("Testing connectivity")
@@ -89,14 +115,17 @@ func main() {
     log.Print("Connectivity test passed! pass: %v, duration: %d", pass, duration)
   }
 
-  // TODO: Measure overall test duration
+  log.Printf("Testing %d runs with concurrency of %d", runs, concurrency)
   
+  // TODO: Measure overall test duration
+    
+  // Create a structure to record the results and timing of each test
+  runResults := make(map[int]map[string]*TestResult, runs)
+
+  // Generate a unique filename to use for testing
+  // TODO: Consider making it unique-er
   fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
   
-  // Test each JSFS method and record the results
-  // TODO: POST a file
-  log.Printf("Testing %d runs with concurrency of %d", runs, concurrency)
-
   // Create a channel to serve as a concurrency queue
   q := make(chan int, concurrency)
   
@@ -105,12 +134,16 @@ func main() {
 
   // Start each run
   for run := 0; run < runs; run++ {
+
+    go doRun(run, q, r, serverProto, serverName, serverPort, fileName)
+    /*
     go func() {
       runResult := make(map[string]*TestResult, testCount)
       
-      // Add the run to the queue or block if queue is full
-      q <- 1
-      
+      // Add the run to the queue (this will block if the channel is full)
+      q <- run
+
+      // Test each JSFS method and record the results    
       log.Print("Testing POST")
       pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
       if err != nil {
@@ -130,8 +163,9 @@ func main() {
       r <- runResult
 
       // Remove this run from the queue
-      log.Printf("Removing %d run from the queue", <-q)
+      log.Printf("Removing run %d from the queue", <-q)
     }()
+    */
   }
 
   // Gather run results from the channel
