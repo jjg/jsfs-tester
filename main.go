@@ -88,22 +88,28 @@ func main() {
   } else {
     log.Print("Connectivity test passed! pass: %v, duration: %d", pass, duration)
   }
+
+  // TODO: Measure overall test duration
   
-  // TODO: Execute tests as requested (number, concurrency, etc.)
-  // TODO: Include auth (token, key, etc.) in these tests
   fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
   
   // Test each JSFS method and record the results
   // TODO: POST a file
   log.Printf("Testing %d runs with concurrency of %d", runs, concurrency)
 
-  // Create a channel to recieve run results
-  c := make(chan map[string]*TestResult)
+  // Create a channel to serve as a concurrency queue
+  q := make(chan int, concurrency)
+  
+  // Create a channel to receive run results
+  r := make(chan map[string]*TestResult)
 
   // Start each run
   for run := 0; run < runs; run++ {
     go func() {
       runResult := make(map[string]*TestResult, testCount)
+      
+      // Add the run to the queue or block if queue is full
+      q <- 1
       
       log.Print("Testing POST")
       pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
@@ -117,19 +123,25 @@ func main() {
       // TODO: PUT a chane to the file
       // TODO: DELETE the file
 
+      // TODO: Include auth (token, key, etc.) in these tests
       // TODO: Consider how tests might be written external to this code
 
-      c <- runResult
+      // Send the results of the run through the results channel
+      r <- runResult
+
+      // Remove this run from the queue
+      log.Printf("Removing %d run from the queue", <-q)
     }()
   }
 
   // Gather run results from the channel
   // TODO: There may be a smarter way to do this
   for i:=runs;i>0;i-- {
-    runResults[i] = <-c
+    runResults[i] = <-r
+    
+    // TODO: Consider outputting the results of each run as they complete
+    // instead of all at once at the end of the program
   }
-  
-  // TODO: Start another batch of runs (up to concurrency limit)
 
   // Display results
   for i:=0;i<runs;i++ {
