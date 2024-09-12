@@ -120,7 +120,6 @@ func main() {
   // Measure overall test duration
   startTime := time.Now()
 
-    
   // Create a structure to record the results and timing of each test
   runResults := make(map[int]map[string]*TestResult, runs)
 
@@ -136,38 +135,7 @@ func main() {
 
   // Start each run
   for run := 0; run < runs; run++ {
-
     go doRun(run, q, r, serverProto, serverName, serverPort, fileName)
-    /*
-    go func() {
-      runResult := make(map[string]*TestResult, testCount)
-      
-      // Add the run to the queue (this will block if the channel is full)
-      q <- run
-
-      // Test each JSFS method and record the results    
-      log.Print("Testing POST")
-      pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
-      if err != nil {
-        log.Printf("Error running POST test: %s", err)
-      }
-      runResult["post"] = &TestResult{Pass: pass, Duration: duration}
- 
-      // TODO: HEAD the file
-      // TODO: GET the file
-      // TODO: PUT a chane to the file
-      // TODO: DELETE the file
-
-      // TODO: Include auth (token, key, etc.) in these tests
-      // TODO: Consider how tests might be written external to this code
-
-      // Send the results of the run through the results channel
-      r <- runResult
-
-      // Remove this run from the queue
-      log.Printf("Removing run %d from the queue", <-q)
-    }()
-    */
   }
 
   // Gather run results from the channel
