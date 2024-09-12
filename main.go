@@ -65,7 +65,7 @@ func postTest(proto string, name string, port int, fileName string) (bool, int64
 
 // TODO: This should probably accept a struct or something easier
 // for the caller to not mess-up
-func doRun(run int, q chan int, r chan map[string]*TestResult, serverProto string, serverName string, serverPort int, fileName string){
+func doRun(run int, q chan int, r chan<- map[string]*TestResult, serverProto string, serverName string, serverPort int, fileName string){
   runResult := make(map[string]*TestResult, testCount)
 
   // Add the run to the queue (this will block if the channel is full)
