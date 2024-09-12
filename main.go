@@ -103,8 +103,8 @@ func main() {
   serverName := "localhost"
   serverProto := "http"
   serverPort := 7302
-  runs := 5
-  concurrency := 2
+  runs := 5         // TODO: there is a bug when this is set to 1
+  concurrency := 1
 
   // Perform a check to make sure the arguments point to a valid server
   log.Print("Testing connectivity")
@@ -112,12 +112,14 @@ func main() {
     log.Fatal("Configuration error (are the arguments correct?): %s", err)
     os.Exit(1)
   } else {
-    log.Print("Connectivity test passed! pass: %v, duration: %d", pass, duration)
+    log.Printf("Connectivity test passed! pass: %v, duration: %d", pass, duration)
   }
 
   log.Printf("Testing %d runs with concurrency of %d", runs, concurrency)
   
-  // TODO: Measure overall test duration
+  // Measure overall test duration
+  startTime := time.Now()
+
     
   // Create a structure to record the results and timing of each test
   runResults := make(map[int]map[string]*TestResult, runs)
@@ -187,6 +189,7 @@ func main() {
   }
 
   // TODO: Display overall average results
+  fmt.Printf("Total testing duration: %dms\n", time.Since(startTime).Milliseconds())
   
   log.Print("All done!")
 }
