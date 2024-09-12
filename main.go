@@ -94,6 +94,13 @@ func doRun(run int, q chan int, r chan<- map[string]*TestResult, serverProto str
   log.Printf("Removing run %d from the queue", <-q)  
 }
 
+func printRunResult(r map[string]*TestResult){
+  fmt.Printf("Test\t\tPass\tDuration\n")
+  for k, v := range r {
+    fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
+  }
+}
+
 func main() {
 
   log.Print("Starting up...")
@@ -103,7 +110,7 @@ func main() {
   serverName := "localhost"
   serverProto := "http"
   serverPort := 7302
-  runs := 5         // TODO: there is a bug when this is set to 1
+  runs := 5
   concurrency := 1
 
   // Perform a check to make sure the arguments point to a valid server
@@ -140,24 +147,20 @@ func main() {
 
   // Gather run results from the channel
   // TODO: There may be a smarter way to do this
+  // BUG: This omits the results of the first run (0)
   for i:=runs;i>0;i-- {
     runResults[i] = <-r
-    
-    // TODO: Consider outputting the results of each run as they complete
-    // instead of all at once at the end of the program
+    printRunResult(runResults[i])
   }
 
   // Display results
+  // TODO: Display overall average results
   for i:=0;i<runs;i++ {
     fmt.Printf("Run %d:\n", i)
-    fmt.Printf("Test\t\tPass\tDuration\n")
-    for k, v := range runResults[i] {
-      fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
-    }
+    printRunResult(runResults[i])
   }
-
-  // TODO: Display overall average results
+  fmt.Printf("%d test runs with concurrency of %d\n", runs, concurrency)
   fmt.Printf("Total testing duration: %dms\n", time.Since(startTime).Milliseconds())
-  
+
   log.Print("All done!")
 }
