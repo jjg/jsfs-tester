@@ -9,6 +9,9 @@ import (
   "bytes"
 )
 
+// TODO: this should probably be more dynamic
+const testCount = 6
+
 type TestResult struct {
   Pass bool
   Duration int64
@@ -37,7 +40,7 @@ func postTest(proto string, name string, port int, fileName string) (bool, int64
   startTime := time.Now()
 
   // TODO: Don't hard-code the access key
-  reqUrl := fmt.Sprintf("%s://%s:%d/%s.txt?access_key=foo", proto, name, port, fileName)
+  reqUrl := fmt.Sprintf("%s://%s:%d/%s?access_key=foo", proto, name, port, fileName)
   jsonBody := []byte(`{"message": "I am a teapot"}`)
   bodyReader := bytes.NewReader(jsonBody)
   
@@ -62,17 +65,20 @@ func postTest(proto string, name string, port int, fileName string) (bool, int64
 
 
 func main() {
+
   log.Print("Starting up...")
   
   // TODO: parse arguments for server name, port, concurrency, 
-  // number of requests, verbosity, etc.
+  // number of test runs, verbosity, etc.
   serverName := "localhost"
   serverProto := "http"
   serverPort := 7302
-
+  runs := 5
+  concurrency := 1
 
   // Create a structure to record the results and timing of each test
-  results := make(map[string]*TestResult,10) // TODO: Use a real size, not a guess
+  runResults := make(map[int]map[string]*TestResult, runs)
+  //finalResults := make(map[string]*TestResult, testCount)
 
   // Perform a check to make sure the arguments point to a valid server
   log.Print("Testing connectivity")
@@ -80,8 +86,7 @@ func main() {
     log.Fatal("Configuration error (are the arguments correct?): %s", err)
     os.Exit(1)
   } else {
-    log.Print("connectivity test passed!")
-    results["connectivity"] = &TestResult{Pass: pass, Duration: duration}  
+    log.Print("Connectivity test passed! pass: %v, duration: %d", pass, duration)
   }
   
   // TODO: Execute tests as requested (number, concurrency, etc.)
@@ -90,27 +95,43 @@ func main() {
   
   // TODO: Test each JSFS method and record the results
   // TODO: POST a file
-  log.Print("Testing POST")
-  if pass, duration, err := postTest(serverProto, serverName, serverPort, fileName); err != nil {
-    log.Fatal("Error running POST test: %s", err)
-    os.Exit(1)
-  } else {
-    results["post"] = &TestResult{Pass: pass, Duration: duration}  
-  }
-    
-  
-  // TODO: HEAD the file
-  // TODO: GET the file
-  // TODO: PUT a chane to the file
-  // TODO: DELETE the file
+  log.Printf("Testing %d runs with concurrency %d", runs, concurrency)
 
-  // TODO: Consider how tests might be written external to this code
+  // TODO: Can't do concurrency until we decide how we want to report on it,
+  // (show all results, show average, etc.)
+  //c := make(chan int)
+  for run := 0; run < runs; run++ {
+    //go func() {
+      runResults[run] = make(map[string]*TestResult, testCount)
+      
+      log.Print("Testing POST")
+      pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
+      if err != nil {
+        log.Printf("Error running POST test: %s", err)
+      }
+      runResults[run]["post"] = &TestResult{Pass: pass, Duration: duration}
+ 
+      
+      // TODO: HEAD the file
+      // TODO: GET the file
+      // TODO: PUT a chane to the file
+      // TODO: DELETE the file
+
+      // TODO: Consider how tests might be written external to this code
+    //}()
+  }
+
 
   // Display results
-  fmt.Printf("Test\t\t\tPass\tDuration\n")
-  for k, v := range results {
-    fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
+  for i:=0;i<runs;i++ {
+    fmt.Printf("Run %d:\n", i)
+    fmt.Printf("Test\t\t\tPass\tDuration\n")
+    for k, v := range runResults[i] {
+      fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
+    }
   }
+
+  // TODO: Display overall average results
   
   log.Print("All done!")
 }
