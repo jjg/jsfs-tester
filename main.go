@@ -40,6 +40,7 @@ func postTest(proto string, name string, port int, fileName string) (bool, int64
   startTime := time.Now()
 
   // TODO: Don't hard-code the access key
+  // TODO: Offer to randomize the body to bypass dedupe
   reqUrl := fmt.Sprintf("%s://%s:%d/%s?access_key=foo", proto, name, port, fileName)
   jsonBody := []byte(`{"message": "I am a teapot"}`)
   bodyReader := bytes.NewReader(jsonBody)
