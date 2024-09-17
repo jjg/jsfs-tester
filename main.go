@@ -142,8 +142,7 @@ func main() {
 
 	// Gather run results from the channel
 	// TODO: There may be a smarter way to do this
-	// BUG: This omits the results of the first run (0)
-	for i := runs; i > 0; i-- {
+	for i := runs - 1; i >= 0; i-- {
 		runResults[i] = <-r
 		printRunResult(runResults[i])
 	}
@@ -151,7 +150,7 @@ func main() {
 	// Display results
 	// TODO: Display overall average results
 	for i := 0; i < runs; i++ {
-		fmt.Printf("Run %d:\n", i)
+		fmt.Printf("Run %d:\n", i+1)
 		printRunResult(runResults[i])
 	}
 	fmt.Printf("%d test runs with concurrency of %d\n", runs, concurrency)
