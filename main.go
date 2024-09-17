@@ -36,10 +36,33 @@ func doRun(run int, q chan int, r chan<- map[string]*TestResult, tr *TestRequest
 	}
 	runResult["post"] = &TestResult{Pass: pass, Duration: duration}
 
-	// TODO: HEAD the file
-	// TODO: GET the file
-	// TODO: PUT a chane to the file
-	// TODO: DELETE the file
+	log.Print("Testing HEAD")
+	pass, duration, err = headTest(tr)
+	if err != nil {
+		log.Printf("Error running HEAD test: %s", err)
+	}
+	runResult["head"] = &TestResult{Pass: pass, Duration: duration}
+
+	log.Print("Testing GET")
+	pass, duration, err = getTest(tr)
+	if err != nil {
+		log.Printf("Error running GET test: %s", err)
+	}
+	runResult["get"] = &TestResult{Pass: pass, Duration: duration}
+
+	log.Print("Testing PUT")
+	pass, duration, err = putTest(tr)
+	if err != nil {
+		log.Printf("Error running PUT test: %s", err)
+	}
+	runResult["put"] = &TestResult{Pass: pass, Duration: duration}
+
+	log.Print("Testing DELETE")
+	pass, duration, err = deleteTest(tr)
+	if err != nil {
+		log.Printf("Error running DELETE test: %s", err)
+	}
+	runResult["delete"] = &TestResult{Pass: pass, Duration: duration}
 
 	// TODO: Include auth (token, key, etc.) in these tests
 	// TODO: Consider how tests might be written external to this code
