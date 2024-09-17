@@ -75,6 +75,7 @@ func doRun(run int, q chan int, r chan<- map[string]*TestResult, tr *TestRequest
 }
 
 func printRunResult(r map[string]*TestResult) {
+	// TODO: It would be cool if these always printed in the same order
 	fmt.Printf("Test\t\tPass\tDuration\n")
 	for k, v := range r {
 		fmt.Printf("%s\t\t%v\t%dms\n", k, v.Pass, v.Duration)
@@ -148,11 +149,25 @@ func main() {
 	}
 
 	// Display results
-	// TODO: Display overall average results
+	methodAccumulator := make(map[string]int64, 5)
+
 	for i := 0; i < runs; i++ {
 		fmt.Printf("Run %d:\n", i+1)
 		printRunResult(runResults[i])
+
+		// Accumulate results to display averages
+		for k, v := range runResults[i] {
+			methodAccumulator[k] = methodAccumulator[k] + v.Duration
+		}
 	}
+
+	// Display overall averages for each method
+	fmt.Println("Average duration by method for all runs:")
+	fmt.Println("Method\tDuration")
+	for k, v := range methodAccumulator {
+		fmt.Printf("%s:\t%dms\n", k, v/int64(runs))
+	}
+
 	fmt.Printf("%d test runs with concurrency of %d\n", runs, concurrency)
 	fmt.Printf("Total testing duration: %dms\n", time.Since(startTime).Milliseconds())
 
