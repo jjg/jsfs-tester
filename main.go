@@ -104,6 +104,13 @@ func printRunResult(r map[string]*TestResult){
 
 func main() {
 
+	// Log to a file
+	file, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalln("Unable to set logfile:", err.Error())
+	}
+	log.SetOutput(file)
+
   log.Print("Starting up...")
   
   // TODO: parse cli arguments for server name, port, 
