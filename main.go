@@ -168,8 +168,7 @@ func main() {
 		fmt.Printf("%s:\t%dms\n", k, v/int64(runs))
 	}
 
-	fmt.Printf("%d test runs with concurrency of %d\n", runs, concurrency)
-	fmt.Printf("Total testing duration: %dms\n", time.Since(startTime).Milliseconds())
+	fmt.Printf("%d test runs with concurrency of %d finished in %dms\n", runs, concurrency, time.Since(startTime).Milliseconds())
 
 	log.Print("All done!")
 }
