@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -93,13 +94,31 @@ func main() {
 
 	log.Print("Starting up...")
 
-	// TODO: parse cli arguments for server name, port,
-	// concurrency, number of test runs, verbosity, etc.
-	serverName := "localhost"
-	serverProto := "http"
-	serverPort := 7302
-	runs := 5
-	concurrency := 1
+	// Parse cli arguments or use defaults
+	var serverName, serverProto string
+	var serverPort, runs, concurrency int
+	var verbose bool
+
+	flag.StringVar(&serverName, "name", "localhost", "Name or IP address of the JSFS server to test")
+	flag.StringVar(&serverProto, "protocol", "http", "Protocol to use for requests (http or https)")
+	flag.IntVar(&serverPort, "port", 7302, "Port number the JSFS server is listening on")
+	flag.IntVar(&runs, "n", 1, "Number of test runs to execute")
+	flag.IntVar(&concurrency, "c", 1, "Number of tests to run at the same time (concurrency)")
+	flag.BoolVar(&verbose, "v", false, "Increase verbosity")
+
+	flag.Parse()
+
+	// Generate a unique filename to use for testing
+	// TODO: Consider making it unique-er
+	fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
+
+	// Assemble the request parameters
+	testRequest := &TestRequest{
+		Protocol:   serverProto,
+		ServerName: serverName,
+		ServerPort: serverPort,
+		FileName:   fileName,
+	}
 
 	// Perform a check to make sure the arguments point to a valid server
 	log.Print("Testing connectivity")
@@ -118,18 +137,6 @@ func main() {
 	// Create a structure to record the results and timing of each test
 	runResults := make(map[int]map[string]*TestResult, runs)
 
-	// Generate a unique filename to use for testing
-	// TODO: Consider making it unique-er
-	fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
-
-	// Assemble the request parameters
-	testRequest := &TestRequest{
-		Protocol:   serverProto,
-		ServerName: serverName,
-		ServerPort: serverPort,
-		FileName:   fileName,
-	}
-
 	// Create a channel to serve as a concurrency queue
 	q := make(chan int, concurrency)
 
@@ -145,16 +152,19 @@ func main() {
 	// TODO: There may be a smarter way to do this
 	for i := runs - 1; i >= 0; i-- {
 		runResults[i] = <-r
-		printRunResult(runResults[i])
+		if verbose {
+			printRunResult(runResults[i])
+		}
 	}
 
 	// Display results
 	methodAccumulator := make(map[string]int64, 5)
 
 	for i := 0; i < runs; i++ {
-		fmt.Printf("Run %d:\n", i+1)
-		printRunResult(runResults[i])
-
+		if verbose {
+			fmt.Printf("Run %d:\n", i+1)
+			printRunResult(runResults[i])
+		}
 		// Accumulate results to display averages
 		for k, v := range runResults[i] {
 			methodAccumulator[k] = methodAccumulator[k] + v.Duration
