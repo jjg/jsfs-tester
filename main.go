@@ -10,14 +10,19 @@ import (
 // TODO: this should probably be more dynamic
 const testCount = 6
 
+type TestRequest struct {
+	Protocol   string
+	ServerName string
+	ServerPort int
+	FileName   string
+}
+
 type TestResult struct {
 	Pass     bool
 	Duration int64
 }
 
-// TODO: This should probably accept a struct or something easier
-// for the caller to not mess-up
-func doRun(run int, q chan int, r chan<- map[string]*TestResult, serverProto string, serverName string, serverPort int, fileName string) {
+func doRun(run int, q chan int, r chan<- map[string]*TestResult, tr *TestRequest) {
 	runResult := make(map[string]*TestResult, testCount)
 
 	// Add the run to the queue (this will block if the channel is full)
@@ -25,7 +30,7 @@ func doRun(run int, q chan int, r chan<- map[string]*TestResult, serverProto str
 
 	// Test each JSFS method and record the results
 	log.Print("Testing POST")
-	pass, duration, err := postTest(serverProto, serverName, serverPort, fileName)
+	pass, duration, err := postTest(tr)
 	if err != nil {
 		log.Printf("Error running POST test: %s", err)
 	}
@@ -93,6 +98,14 @@ func main() {
 	// TODO: Consider making it unique-er
 	fileName := fmt.Sprintf("test-%d.json", time.Now().UnixMilli())
 
+	// Assemble the request parameters
+	testRequest := &TestRequest{
+		Protocol:   serverProto,
+		ServerName: serverName,
+		ServerPort: serverPort,
+		FileName:   fileName,
+	}
+
 	// Create a channel to serve as a concurrency queue
 	q := make(chan int, concurrency)
 
@@ -101,7 +114,7 @@ func main() {
 
 	// Start each run
 	for run := 0; run < runs; run++ {
-		go doRun(run, q, r, serverProto, serverName, serverPort, fileName)
+		go doRun(run, q, r, testRequest)
 	}
 
 	// Gather run results from the channel

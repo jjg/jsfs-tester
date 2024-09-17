@@ -27,12 +27,12 @@ func connectTest(proto string, name string, port int) (bool, int64, error) {
 	return true, time.Since(startTime).Milliseconds(), nil
 }
 
-func postTest(proto string, name string, port int, fileName string) (bool, int64, error) {
+func postTest(tr *TestRequest) (bool, int64, error) {
 	startTime := time.Now()
 
 	// TODO: Don't hard-code the access key
 	// TODO: Offer to randomize the body to bypass dedupe
-	reqUrl := fmt.Sprintf("%s://%s:%d/%s?access_key=foo", proto, name, port, fileName)
+	reqUrl := fmt.Sprintf("%s://%s:%d/%s?access_key=foo", tr.Protocol, tr.ServerName, tr.ServerPort, tr.FileName)
 	jsonBody := []byte(`{"message": "I am a teapot"}`)
 	bodyReader := bytes.NewReader(jsonBody)
 
