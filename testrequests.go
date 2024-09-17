@@ -152,8 +152,12 @@ func deleteTest(tr *TestRequest) (bool, int64, error) {
 	log.Printf("DELETE got a response code %d", res.StatusCode)
 
 	if res.StatusCode == 204 {
-		// TODO: Verify DELETE with follow-up GET
-		return true, time.Since(startTime).Milliseconds(), nil
+		// Verify DELETE with follow-up HEAD (should fail)
+		pass, _, err := headTest(tr)
+		if err != nil {
+			return false, time.Since(startTime).Milliseconds(), err
+		}
+		return !pass, time.Since(startTime).Milliseconds(), nil
 	} else {
 		return false, time.Since(startTime).Milliseconds(), nil
 	}
